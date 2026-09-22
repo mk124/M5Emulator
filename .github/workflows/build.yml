@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  macos:
+    name: macOS universal
+    runs-on: macos-26
+    timeout-minutes: 120
+    env:
+      CC: /usr/bin/clang
+      CXX: /usr/bin/clang++
+      OBJCXX: /usr/bin/clang++
+      CMAKE_GENERATOR: Ninja
+      M5EMU_BUILD_JOBS: '3'
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+      HOMEBREW_NO_INSTALL_CLEANUP: '1'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install dependencies
+        run: |
+          brew install cmake ninja pkgconf sdl2 sdl3 glib pixman libgcrypt
+          if ! /usr/bin/arch -x86_64 /usr/bin/true; then
+            sudo softwareupdate --install-rosetta --agree-to-license
+          fi
+          xcodebuild -version
+          /usr/bin/clang++ --version
+
+      - name: Cache dependency downloads
+        uses: actions/cache@v6
+        with:
+          path: .deps/macos-x86_64/downloads
+          key: intel-downloads-${{ hashFiles('tools/intel-dependencies.txt') }}
+
+      - name: Build, test and package both architectures
+        run: python3 tools/package_macos.py
+
+      - name: Archive application
+        run: |
+          lipo 'dist/M5 Emulator.app/Contents/MacOS/m5-emulator' -verify_arch arm64 x86_64
+          ditto -c -k --sequesterRsrc --keepParent 'dist/M5 Emulator.app' dist/M5-Emulator-macOS-universal.zip
+          unzip -tq dist/M5-Emulator-macOS-universal.zip
+
+      - name: Upload application
+        uses: actions/upload-artifact@v7
+        with:
+          path: dist/M5-Emulator-macOS-universal.zip
+          archive: false
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-logs
+          include-hidden-files: true
+          path: |
+            out/macos-x86_64/*.log
+            .deps/qemu/build/meson-logs/meson-log.txt
+            .deps/qemu/build-x86_64/meson-logs/meson-log.txt
+            build/Testing/Temporary/LastTest.log
+            build-x86_64/Testing/Temporary/LastTest.log
+          retention-days: 7
+
+  release:
+    name: Publish release
+    needs: macos
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: M5-Emulator-macOS-universal.zip
+          skip-decompress: true
+
+      - name: Create release with download
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: gh release create "$RELEASE_TAG" M5-Emulator-macOS-universal.zip --verify-tag --title "$RELEASE_TAG" --generate-notes

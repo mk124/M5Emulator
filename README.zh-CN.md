@@ -2,6 +2,10 @@
   <img src="resources/AppIcon.png" alt="M5 Emulator 应用图标" width="128" height="128">
   <h1>M5 Emulator</h1>
   <p>基于 QEMU 的非官方 M5Stack 设备模拟器，用于固件开发和测试。</p>
+  <p>
+    <a href="https://github.com/mk124/M5Emulator/releases/latest"><img src="https://img.shields.io/github/v/release/mk124/M5Emulator?label=version" alt="最新版本"></a>
+    <a href="https://github.com/mk124/M5Emulator/actions/workflows/build.yml"><img src="https://github.com/mk124/M5Emulator/actions/workflows/build.yml/badge.svg?event=push" alt="发布构建状态"></a>
+  </p>
   <p><a href="README.md">English</a> | <strong>中文</strong></p>
 </div>
 

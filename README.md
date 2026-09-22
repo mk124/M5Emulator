@@ -2,6 +2,10 @@
   <img src="resources/AppIcon.png" alt="M5 Emulator app icon" width="128" height="128">
   <h1>M5 Emulator</h1>
   <p>An unofficial QEMU-based M5Stack device emulator for firmware development and testing.</p>
+  <p>
+    <a href="https://github.com/mk124/M5Emulator/releases/latest"><img src="https://img.shields.io/github/v/release/mk124/M5Emulator?label=version" alt="Latest release"></a>
+    <a href="https://github.com/mk124/M5Emulator/actions/workflows/build.yml"><img src="https://github.com/mk124/M5Emulator/actions/workflows/build.yml/badge.svg?event=push" alt="Release build status"></a>
+  </p>
   <p><strong>English</strong> | <a href="README.zh-CN.md">中文</a></p>
 </div>
 
