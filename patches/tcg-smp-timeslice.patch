@@ -1,0 +1,16 @@
+diff --git a/accel/tcg/tcg-accel-ops-rr.c b/accel/tcg/tcg-accel-ops-rr.c
+--- a/accel/tcg/tcg-accel-ops-rr.c
++++ b/accel/tcg/tcg-accel-ops-rr.c
+@@ -64,7 +64,11 @@ static CPUState *rr_current_cpu;
+ 
+ static inline int64_t rr_next_kick_time(void)
+ {
+-    return qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) + TCG_KICK_PERIOD;
++    /* Without icount's instruction budgets, a busy core can keep its sibling
++     * waiting for 100 ms. MCU DMA buffers and RTOS ticks need finer service;
++     * use a 1 ms host-clock timeslice while retaining icount's own pacing. */
++    int64_t period = icount_enabled() ? TCG_KICK_PERIOD : SCALE_MS;
++    return qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) + period;
+ }
+ 
+ /* Kick the currently round-robin scheduled vCPU to next */

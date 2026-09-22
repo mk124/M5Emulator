@@ -1,0 +1,11 @@
+# name version sha256 url
+sdl3 3.4.16 7322236cd12090c3eb40b9728be4d49c76f66ad17d04369584d4ecad5cf77c68 https://github.com/libsdl-org/SDL/releases/download/release-3.4.16/SDL3-3.4.16.tar.gz
+sdl2-compat 2.32.72 a14d2f78dad8e83ef1039b6534ace4d14f11f5b11d023af989affd70ac1bb35e https://github.com/libsdl-org/sdl2-compat/releases/download/release-2.32.72/sdl2-compat-2.32.72.tar.gz
+pcre2 10.48 b6c68fdf6f3ac31388b50aa89ff0fc49c00c987c16e7b5146491d12003f2c8ed https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.48/pcre2-10.48.tar.bz2
+libgpg-error 1.61 7a85413f2bc354f4f8aa832b718af122e48965e9e0eb9012ee659c13c6385c93 https://gnupg.org/ftp/gcrypt/libgpg-error/libgpg-error-1.61.tar.bz2
+libgcrypt 1.12.4 d77f68f48879510e79a2f65977ccc68981781ea0923e5bdffac2a193ea3d660e https://gnupg.org/ftp/gcrypt/libgcrypt/libgcrypt-1.12.4.tar.bz2
+pixman 0.46.4 d09c44ebc3bd5bee7021c79f922fe8fb2fb57f7320f55e97ff9914d2346a591c https://cairographics.org/releases/pixman-0.46.4.tar.gz
+gettext 1.0 85d99b79c981a404874c02e0342176cf75c7698e2b51fe41031cf6526d974f1a https://ftp.gnu.org/gnu/gettext/gettext-1.0.tar.gz
+glib 2.88.3 ab24d24e698dfa1e408b7bcdb508f4aafc906185a8b8ce72fdf79bbbdc9b383b https://download.gnome.org/sources/glib/2.88/glib-2.88.3.tar.xz
+libffi 3.4.8 bc9842a18898bfacb0ed1252c4febcc7e78fa139fd27fdc7a3e30d9d9356119b https://github.com/libffi/libffi/releases/download/v3.4.8/libffi-3.4.8.tar.gz
+meson 1.5.0 45d7b8653c1e5139df35b33be2dd5b2d040c5b2c6129f9a7c890d507e33312b8 https://files.pythonhosted.org/packages/d6/97/852cc27c460d5fae07c6d7e4a2744f5684760358de3456b5ee9f130b8f57/meson-1.5.0.tar.gz

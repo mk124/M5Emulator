@@ -1,0 +1,9 @@
+.deps/
+build/
+out/
+__pycache__/
+.DS_Store
+build-x86_64/
+cmake-build-*/
+dist/
+.idea/

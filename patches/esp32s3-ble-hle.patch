@@ -1,0 +1,97 @@
+--- a/target/xtensa/translate.c
++++ b/target/xtensa/translate.c
+@@ -31,6 +31,7 @@
+ #include "qemu/osdep.h"
+ 
+ #include "cpu.h"
++#include "hw/xtensa/m5stopwatch/esp32s3/bluetooth/BleHle.h"
+ #include "exec/exec-all.h"
+ #include "tcg/tcg-op.h"
+ #include "qemu/log.h"
+@@ -1161,6 +1162,21 @@
+         }
+         gen_set_label(label);
+     }
++
++#ifndef CONFIG_USER_ONLY
++    if (bleHleHandles(dc->pc)) {
++        if (!dc->cwoe) {
++            gen_exception_cause(dc, ILLEGAL_INSTRUCTION_CAUSE);
++        } else if (dc->pc == HleReturn || dc->pc == HleRomDataInit || gen_window_check(dc, 1u << 15)) {
++            translator_io_start(&dc->base);
++            gen_helper_ble_hle(tcg_env, tcg_constant_i32(dc->pc));
++            tcg_gen_exit_tb(NULL, 0);
++            dc->base.is_jmp = DISAS_NORETURN;
++        }
++        dc->base.pc_next = dc->pc + 3;
++        return;
++    }
++#endif
+ 
+     disas_xtensa_insn(env, dc);
+ 
+--- a/target/xtensa/helper.h
++++ b/target/xtensa/helper.h
+@@ -194,3 +194,7 @@
+ 
+ DEF_HELPER_4(ld_qacc_x_l_128_ip_s3, void, env, i32, i32, i64)
+ DEF_HELPER_3(st_qacc_x_l_128_ip_s3, i64, env, i32, i32)
++
++#ifndef CONFIG_USER_ONLY
++DEF_HELPER_2(ble_hle, void, env, i32)
++#endif
+--- a/target/xtensa/cpu.c
++++ b/target/xtensa/cpu.c
+@@ -31,12 +31,14 @@
+ #include "qemu/osdep.h"
+ #include "qapi/error.h"
+ #include "cpu.h"
++#include "hw/xtensa/m5stopwatch/esp32s3/bluetooth/BleHle.h"
+ #include "fpu/softfloat.h"
+ #include "qemu/module.h"
+ #include "migration/vmstate.h"
+ #include "hw/qdev-clock.h"
+ #ifndef CONFIG_USER_ONLY
+ #include "exec/memory.h"
++#include "exec/tb-flush.h"
+ #endif
+ 
+ 
+@@ -104,6 +106,13 @@
+     if (xcc->parent_phases.hold) {
+         xcc->parent_phases.hold(obj, type);
+     }
++
++#ifndef CONFIG_USER_ONLY
++    if (cs->cpu_index == 0 && bleHleEnabled()) {
++        bleHleReset();
++        tb_flush(cs);
++    }
++#endif
+ 
+     env->pc = env->config->exception_vector[EXC_RESET0 + env->static_vectors];
+     env->sregs[LITBASE] &= ~1;
+--- a/target/xtensa/meson.build
++++ b/target/xtensa/meson.build
+@@ -17,6 +17,7 @@
+ 
+ xtensa_system_ss = ss.source_set()
+ xtensa_system_ss.add(files(
++  '../../hw/xtensa/m5stopwatch/esp32s3/bluetooth/ble_hle_helper.c',
+   'dbg_helper.c',
+   'mmu_helper.c',
+   'monitor.c',
+@@ -25,3 +26,13 @@
+ 
+ target_arch += {'xtensa': xtensa_ss}
+ target_system_arch += {'xtensa': xtensa_system_ss}
++
++add_languages('cpp', native: false, required: true)
++ble_hle_dir = '../../hw/xtensa/m5stopwatch/esp32s3/bluetooth'
++ble_hle_sources = []
++foreach name : ['ControllerHooks.cpp', 'BleController.cpp', 'BleController.Hci.cpp', 'BleController.Connection.cpp', 'BleController.Link.cpp', 'BleController.Gatt.cpp', 'PeerSocket.cpp']
++  ble_hle_sources += files(ble_hle_dir / name)
++endforeach
++ble_hle_model = static_library('ble-hle-model', ble_hle_sources,
++  override_options: ['cpp_std=none'], cpp_args: ['-std=c++2c'])
++xtensa_system_ss.add(declare_dependency(link_with: ble_hle_model))

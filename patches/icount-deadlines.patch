@@ -1,0 +1,41 @@
+diff --git a/accel/tcg/icount-common.c b/accel/tcg/icount-common.c
+index 30bf850..9c48314 100644
+--- a/accel/tcg/icount-common.c
++++ b/accel/tcg/icount-common.c
+@@ -245,6 +245,9 @@ static void icount_warp_rt(void)
+         return;
+     }
+ 
++    /* Host scheduling latency must not skip a guest timer deadline. */
++    int64_t deadline = qemu_clock_deadline_ns_all(QEMU_CLOCK_VIRTUAL,
++                                               QEMU_TIMER_ATTR_ALL);
+     seqlock_write_lock(&timers_state.vm_clock_seqlock,
+                        &timers_state.vm_clock_lock);
+     if (runstate_is_running()) {
+@@ -253,6 +256,13 @@ static void icount_warp_rt(void)
+         int64_t warp_delta;
+ 
+         warp_delta = clock - timers_state.vm_clock_warp_start;
++        if (icount_align_option) {
++            /* Retain host time left over from an earlier deadline clamp. */
++            warp_delta = MAX(clock - icount_get_locked(), 0);
++        }
++        if (deadline >= 0) {
++            warp_delta = MIN(warp_delta, deadline);
++        }
+         if (icount_enabled() == ICOUNT_ADAPTATIVE) {
+             /*
+              * In adaptive mode, do not let QEMU_CLOCK_VIRTUAL run too far
+@@ -381,8 +391,11 @@ void icount_start_warp_timer(void)
+             }
+             seqlock_write_unlock(&timers_state.vm_clock_seqlock,
+                                  &timers_state.vm_clock_lock);
++            /* When behind, process elapsed deadlines without sleeping again. */
++            int64_t warp_clock = icount_align_option
++                ? qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) : clock;
+             timer_mod_anticipate(timers_state.icount_warp_timer,
+-                                 clock + deadline);
++                                 warp_clock + deadline);
+         }
+     } else if (deadline == 0) {
+         qemu_clock_notify(QEMU_CLOCK_VIRTUAL);

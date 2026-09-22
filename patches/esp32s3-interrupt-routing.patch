@@ -1,0 +1,90 @@
+diff --git a/hw/xtensa/esp32s3_intc.c b/hw/xtensa/esp32s3_intc.c
+index 0437230..1f0efda 100644
+--- a/hw/xtensa/esp32s3_intc.c
++++ b/hw/xtensa/esp32s3_intc.c
+@@ -26,27 +26,45 @@
+ 
+ #define IRQ_MAP(cpu, input) s->irq_map[cpu][input]
+ 
+-static void esp32s3_intmatrix_irq_handler(void *opaque, int n, int level)
++/* Level inputs remain pending while disconnected and combine with OR when
++ * several peripherals share a CPU interrupt. Remapping must update both sides. */
++static void esp32s3_intmatrix_update(Esp32s3IntMatrixState *s)
+ {
+-    Esp32s3IntMatrixState *s = ESP32S3_INTMATRIX(opaque);
+-    for (int i = 0; i < ESP32S3_CPU_COUNT; ++i) {
+-        if (s->outputs[i] == NULL) {
++    for (int cpu = 0; cpu < ESP32S3_CPU_COUNT; ++cpu) {
++        if (s->outputs[cpu] == NULL) {
+             continue;
+         }
+-        int out_index = IRQ_MAP(i, n);
+-        for (int int_index = 0; int_index < s->cpu[i]->env.config->nextint; ++int_index) {
+-            if (s->cpu[i]->env.config->extint[int_index] == out_index) {
+-                qemu_set_irq(s->outputs[i][int_index], level);
+-                break;
++        uint32_t pending = 0;
++        for (int source = 0; source < ESP32S3_INT_MATRIX_INPUTS; ++source) {
++            if (s->input_level[source]) {
++                pending |= 1U << IRQ_MAP(cpu, source);
++            }
++        }
++        uint32_t changed = pending ^ s->output_levels[cpu];
++        s->output_levels[cpu] = pending;
++        for (int index = 0; index < s->cpu[cpu]->env.config->nextint; ++index) {
++            uint32_t bit = 1U << s->cpu[cpu]->env.config->extint[index];
++            if (changed & bit) {
++                qemu_set_irq(s->outputs[cpu][index], (pending & bit) != 0);
+             }
+         }
+     }
+ }
+ 
++static void esp32s3_intmatrix_irq_handler(void *opaque, int n, int level)
++{
++    Esp32s3IntMatrixState *s = ESP32S3_INTMATRIX(opaque);
++    if (s->input_level[n] == (level != 0)) {
++        return;
++    }
++    s->input_level[n] = level != 0;
++    esp32s3_intmatrix_update(s);
++}
++
+ static inline uint8_t* get_map_entry(Esp32s3IntMatrixState* s, hwaddr addr)
+ {
+     int source_index = addr / sizeof(uint32_t);
+-    if (source_index > ESP32S3_INT_MATRIX_INPUTS * ESP32S3_CPU_COUNT) {
++    if (source_index >= ESP32S3_INT_MATRIX_INPUTS * ESP32S3_CPU_COUNT) {
+ #if INTC_DEBUG
+         info_report("%s: source_index %d out of range", __func__, source_index);
+ #endif // INTC_DEBUG
+@@ -73,6 +91,7 @@ static void esp32s3_intmatrix_write(void* opaque, hwaddr addr, uint64_t value, u
+     uint8_t* map_entry = get_map_entry(s, addr);
+     if (map_entry != NULL) {
+         *map_entry = value & 0x1f;
++        esp32s3_intmatrix_update(s);
+     }
+ }
+ 
+@@ -86,6 +105,7 @@ static void esp32s3_intmatrix_reset_hold(Object *obj, ResetType type)
+ {
+     Esp32s3IntMatrixState *s = ESP32S3_INTMATRIX(obj);
+     memset(s->irq_map, INTMATRIX_UNINT_VALUE, sizeof(s->irq_map));
++    memset(s->output_levels, 0, sizeof(s->output_levels));
+     for (int i = 0; i < ESP32S3_CPU_COUNT; ++i) {
+         if (s->outputs[i] == NULL) {
+             continue;
+diff --git a/include/hw/xtensa/esp32s3_intc.h b/include/hw/xtensa/esp32s3_intc.h
+index 5960b9d..1cb61d2 100644
+--- a/include/hw/xtensa/esp32s3_intc.h
++++ b/include/hw/xtensa/esp32s3_intc.h
+@@ -143,6 +143,9 @@ typedef struct Esp32s3IntMatrixState {
+     qemu_irq *outputs[ESP32S3_CPU_COUNT];
+     uint8_t irq_map[ESP32S3_CPU_COUNT][ESP32S3_INT_MATRIX_INPUTS];
+ 
++    bool input_level[ESP32S3_INT_MATRIX_INPUTS];
++    uint32_t output_levels[ESP32S3_CPU_COUNT];
++
+     /* properties */
+     XtensaCPU *cpu[ESP32S3_CPU_COUNT];
+ } Esp32s3IntMatrixState;

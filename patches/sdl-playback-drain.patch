@@ -1,0 +1,18 @@
+diff --git a/audio/sdlaudio.c b/audio/sdlaudio.c
+index 641357e..c55315a 100644
+--- a/audio/sdlaudio.c
++++ b/audio/sdlaudio.c
+@@ -384,7 +384,12 @@ static void sdl_enable_out(HWVoiceOut *hw, bool enable)
+ {
+     SDLVoiceOut *sdl = (SDLVoiceOut *)hw;
+ 
+-    SDL_PauseAudioDevice(sdl->devid, !enable);
++    /* SDL can retain PCM after the mixer and emulation ring are empty.
++     * Keep callbacks running so its conversion and device buffers drain;
++     * the callback supplies silence afterwards. Close stops the device. */
++    if (enable) {
++        SDL_PauseAudioDevice(sdl->devid, 0);
++    }
+ }
+ 
+ static void sdl_fini_in(HWVoiceIn *hw)

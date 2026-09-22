@@ -1,0 +1,23 @@
+--- a/hw/block/m25p80.c
++++ b/hw/block/m25p80.c
+@@ -652,6 +652,7 @@
+     }
+     memset(s->storage + offset, 0xff, len);
+     flash_sync_area(s, offset, len);
++    s->write_enable = false;
+ }
+ 
+ static inline void flash_sync_dirty(Flash *s, int64_t newpage)
+@@ -1558,6 +1559,12 @@
+     if (select) {
+         if (s->state == STATE_COLLECTING_VAR_LEN_DATA) {
+             complete_collecting_data(s);
++        }
++        /* A completed program consumes WREN; SST AAI retains it until WRDI.
++         * dirty_page excludes an aborted command with no program data. */
++        if (s->state == STATE_PAGE_PROGRAM && s->dirty_page >= 0 &&
++            !s->aai_enable) {
++            s->write_enable = false;
+         }
+         s->len = 0;
+         s->pos = 0;

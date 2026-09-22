@@ -1,0 +1,104 @@
+# Editor style reference only; automatic clang-format use is not recommended.
+# Follow AGENTS.md for hand-written formatting.
+BasedOnStyle: LLVM
+
+ColumnLimit: 0
+IndentWidth: 4
+TabWidth: 4
+UseTab: ForIndentation
+ContinuationIndentWidth: 4
+ConstructorInitializerIndentWidth: 4
+AccessModifierOffset: -4
+IndentCaseLabels: true
+IndentPPDirectives: None
+NamespaceIndentation: None
+CompactNamespaces: true
+
+AlignAfterOpenBracket: Align
+AlignOperands: Align
+AlignTrailingComments: Never
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+LambdaBodyIndentation: OuterScope
+AllowAllArgumentsOnNextLine: false
+AllowAllConstructorInitializersOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: false
+  AfterClass: true
+  AfterControlStatement: Always
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: false
+  AfterStruct: true
+  AfterUnion: true
+  BeforeCatch: true
+  BeforeElse: true
+  IndentBraces: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: true
+
+AllowShortBlocksOnASingleLine: Always
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortEnumsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortLambdasOnASingleLine: All
+AllowShortLoopsOnASingleLine: true
+RemoveBracesLLVM: false
+
+BreakTemplateDeclarations: Leave
+RequiresClausePosition: WithPreceding
+BreakAfterAttributes: Leave
+BreakBeforeBinaryOperators: None
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: BeforeComma
+BreakInheritanceList: BeforeComma
+
+Cpp11BracedListStyle: false
+DerivePointerAlignment: false
+PointerAlignment: Left
+ReferenceAlignment: Pointer
+SpaceAfterCStyleCast: true
+SpaceBeforeCpp11BracedList: true
+SpaceBeforeParens: Custom
+SpaceBeforeParensOptions:
+  AfterControlStatements: true
+  AfterOverloadedOperator: false
+SpaceBeforeRangeBasedForLoopColon: true
+SpacesBeforeTrailingComments: 1
+
+MaxEmptyLinesToKeep: 1
+EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: LogicalBlock
+KeepEmptyLines:
+  AtEndOfFile: false
+  AtStartOfBlock: true
+  AtStartOfFile: true
+FixNamespaceComments: false
+IncludeBlocks: Preserve
+ObjCBlockIndentWidth: 4
+ObjCSpaceAfterProperty: false
+ObjCSpaceBeforeProtocolList: true
+ReflowComments: false
+SeparateDefinitionBlocks: Leave
+SortIncludes: Never
+SortUsingDeclarations: Never
+Standard: Latest
+SpaceAfterTemplateKeyword: false
+
+# clang-format cannot preserve blank-line indentation, `[] (...)` lambdas, code-scope
+# preprocessor indentation, constructor colons followed by leading-comma
+# initializers, or mix one-line short enums with Allman-style long enums. Keep
+# those forms hand-written.
+---
+# Objective-C++ follows Apple's selector conventions -- no space after a keyword
+# colon, and one keyword per line with the colons aligned once a declaration
+# takes three or more of them -- while keeping the `Type*` pointer placement
+# above. Formatting stays off; clang-format cannot produce that combination.
+Language: ObjC
+DisableFormat: true

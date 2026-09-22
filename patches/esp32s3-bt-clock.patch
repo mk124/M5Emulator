@@ -1,0 +1,52 @@
+diff --git a/hw/xtensa/esp32s3_clk.c b/hw/xtensa/esp32s3_clk.c
+index d6df309..149d8ae 100644
+--- a/hw/xtensa/esp32s3_clk.c
++++ b/hw/xtensa/esp32s3_clk.c
+@@ -52,6 +52,12 @@ static uint64_t esp32s3_clock_read(void *opaque, hwaddr addr, unsigned int size)
+     uint64_t r = 0;
+ 
+     switch(addr) {
++        case A_SYSTEM_BT_LPCK_DIV_INT:
++            r = s->bt_lpck_div_int;
++            break;
++        case A_SYSTEM_BT_LPCK_DIV_FRAC:
++            r = s->bt_lpck_div_frac;
++            break;
+         case A_SYSTEM_CORE_1_CONTROL_1_REG:
+                 r = s->app_cpu_addr;
+             break;
+@@ -85,6 +91,12 @@ static void esp32s3_clock_write(void *opaque, hwaddr addr, uint64_t value,
+     ESP32S3ClockState *s = ESP32S3_CLOCK(opaque);
+ 
+     switch(addr) {
++        case A_SYSTEM_BT_LPCK_DIV_INT:
++            s->bt_lpck_div_int = value & R_SYSTEM_BT_LPCK_DIV_INT_BT_LPCK_DIV_NUM_MASK;
++            break;
++        case A_SYSTEM_BT_LPCK_DIV_FRAC:
++            s->bt_lpck_div_frac = value & 0x1FFFFFFF;
++            break;
+         case A_SYSTEM_CORE_1_CONTROL_1_REG:
+                 s->app_cpu_addr = (uint32_t)value;
+             break;
+@@ -124,6 +136,9 @@ static void esp32s3_clock_reset_hold(Object *obj, ResetType type)
+     s->cpuperconf = (ESP32S3_PERIOD_SEL_80 << R_SYSTEM_CPU_PER_CONF_CPUPERIOD_SEL_SHIFT) |
+                     (ESP32S3_FREQ_SEL_PLL_480 << R_SYSTEM_CPU_PER_CONF_PLL_FREQ_SEL_SHIFT);
+ 
++    s->bt_lpck_div_int = 255;
++    s->bt_lpck_div_frac = 0x02001001;
++
+     /* Initialize the IRQs */
+     s->levels = 0;
+     for (int i = 0 ; i < ESP32S3_SYSTEM_CPU_INTR_COUNT; i++) {
+diff --git a/include/hw/xtensa/esp32s3_clk.h b/include/hw/xtensa/esp32s3_clk.h
+index 2e87526..fea59ec 100644
+--- a/include/hw/xtensa/esp32s3_clk.h
++++ b/include/hw/xtensa/esp32s3_clk.h
+@@ -48,6 +48,7 @@ typedef struct ESP32S3ClockState {
+     /* Registers for clocks configuration and frequency dividers */
+     uint32_t cpuperconf;
+     uint32_t sysclk;
++    uint32_t bt_lpck_div_int, bt_lpck_div_frac;
+ 
+ 
+     /* IRQs for crosscore interrupts */

@@ -1,0 +1,39 @@
+--- a/meson.build
++++ b/meson.build
+@@ -2636,7 +2636,8 @@
+ config_host_data.set('HAVE_GLIB_WITH_SLICE_ALLOCATOR', glib_has_gslice)
+ config_host_data.set('HAVE_GLIB_WITH_ALIGNED_ALLOC', glib_has_aligned_alloc)
+ config_host_data.set('HAVE_OPENPTY', cc.has_function('openpty', dependencies: util))
+-config_host_data.set('HAVE_STRCHRNUL', cc.has_function('strchrnul'))
++config_host_data.set('HAVE_STRCHRNUL', cc.has_function('strchrnul',
++                     prefix: '#include <string.h>'))
+ config_host_data.set('HAVE_SYSTEM_FUNCTION', cc.has_function('system', prefix: '#include <stdlib.h>'))
+ if rbd.found()
+   config_host_data.set('HAVE_RBD_NAMESPACE_EXISTS',
+--- a/block/file-posix.c
++++ b/block/file-posix.c
+@@ -3932,15 +3932,9 @@
+ static char *FindEjectableOpticalMedia(io_iterator_t *mediaIterator)
+ {
+     kern_return_t kernResult = KERN_FAILURE;
+-    mach_port_t mainPort;
+     CFMutableDictionaryRef  classesToMatch;
+     const char *matching_array[] = {kIODVDMediaClass, kIOCDMediaClass};
+     char *mediaType = NULL;
+-
+-    kernResult = IOMainPort(MACH_PORT_NULL, &mainPort);
+-    if ( KERN_SUCCESS != kernResult ) {
+-        printf("IOMainPort returned %d\n", kernResult);
+-    }
+ 
+     int index;
+     for (index = 0; index < ARRAY_SIZE(matching_array); index++) {
+@@ -3952,7 +3946,7 @@
+         }
+         CFDictionarySetValue(classesToMatch, CFSTR(kIOMediaEjectableKey),
+                              kCFBooleanTrue);
+-        kernResult = IOServiceGetMatchingServices(mainPort, classesToMatch,
++        kernResult = IOServiceGetMatchingServices(MACH_PORT_NULL, classesToMatch,
+                                                   mediaIterator);
+         if (kernResult != KERN_SUCCESS) {
+             error_report("Note: IOServiceGetMatchingServices returned %d",
